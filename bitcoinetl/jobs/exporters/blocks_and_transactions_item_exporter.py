@@ -46,7 +46,7 @@ BLOCK_FIELDS_TO_EXPORT = [
     "transaction_count",
     "block_reward",
     "transaction_ids",
-    "coin_price_usd",
+    # "coin_price_usd",
 ]
 
 
@@ -69,7 +69,7 @@ TRANSACTION_FIELDS_TO_EXPORT = [
     'output_value',
     'inputs',
     'outputs',
-    'coin_price_usd',
+    # 'coin_price_usd',
 ]
 
 
