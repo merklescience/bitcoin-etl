@@ -26,7 +26,6 @@ from time import time
 from math import floor
 from datetime import datetime, timedelta
 
-
 CRYPTOCOMPARE_API_KEY = os.getenv("CRYPTOCOMPARE_API_KEY", "")
 
 
@@ -73,7 +72,7 @@ def _make_request(
         exchange_code: str,
         num_records: int,
         api_version: str
-    ) -> requests.Response:
+) -> requests.Response:
     """
     API documentation for cryptocompare can be found at https://min-api.cryptocompare.com/documentation
     """
@@ -93,12 +92,12 @@ def get_coin_price(
         from_currency_code: str,
         timestamp: int,
         resource="histohour",
-        to_currency_code: str="USD",
-        exchange_code: str="CCCAGG",
-        num_records: int=1,
-        api_version: str ="v2",
-        access_token: str=CRYPTOCOMPARE_API_KEY,
-    ):
+        to_currency_code: str = "USD",
+        exchange_code: str = "CCCAGG",
+        num_records: int = 1,
+        api_version: str = "v2",
+        access_token: str = CRYPTOCOMPARE_API_KEY,
+):
     """
     Prices are retrieved from hourly price resource as prices
     are available for historical data from when available

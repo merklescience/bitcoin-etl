@@ -29,14 +29,12 @@ from bitcoinetl.mappers.block_mapper import BtcBlockMapper
 from bitcoinetl.mappers.transaction_mapper import BtcTransactionMapper
 from bitcoinetl.service.btc_script_service import script_hex_to_non_standard_address
 from bitcoinetl.service.genesis_transactions import GENESIS_TRANSACTIONS
+from blockchainetl.cryptocompare import get_day_id_from_ts, get_hour_id_from_ts, get_ts_from_hour_id, \
+    get_ts_from_day_id, get_coin_price
 from blockchainetl.utils import rpc_response_batch_to_results, dynamic_batch_iterator
-from blockchainetl.cryptocompare import (
-    get_coin_price,
-    get_hour_id_from_ts,
-    get_day_id_from_ts,
-    get_ts_from_hour_id,
-    get_ts_from_day_id
-)
+
+
+# from blockchainetl.biforst_pricing import get_coin_price
 
 
 class BtcService(object):
@@ -82,14 +80,16 @@ class BtcService(object):
         if self.chain in Chain.HAVE_OLD_API and with_transactions:
             self._fetch_transactions(blocks)
 
-        self._add_coin_price_to_blocks(blocks, self.coin_price_type)
+        if not ((self.coin_price_type is None) or (self.coin_price_type == CoinPriceType.empty)):
+            self._add_coin_price_to_blocks(blocks, self.coin_price_type)
 
         for block in blocks:
             self._remove_coinbase_input(block)
 
             if block.has_full_transactions():
                 for transaction in block.transactions:
-                    self._add_coin_price_to_transaction(transaction, block.coin_price_usd)
+                    if not ((self.coin_price_type is None) or (self.coin_price_type == CoinPriceType.empty)):
+                        self._add_coin_price_to_transaction(transaction, block.coin_price_usd)
                     self._add_non_standard_addresses(transaction)
                     if self.chain == Chain.ZCASH:
                         self._add_shielded_inputs_and_outputs(transaction)
@@ -168,7 +168,8 @@ class BtcService(object):
                     transaction.is_coinbase = True
 
                     block.coinbase_param = coinbase_input.coinbase_param
-                    block.coinbase_param_decoded = bytes.fromhex(coinbase_input.coinbase_param).decode('utf-8', 'replace')
+                    block.coinbase_param_decoded = bytes.fromhex(coinbase_input.coinbase_param).decode('utf-8',
+                                                                                                       'replace')
                     block.coinbase_tx = transaction
                     block.coinbase_txid = transaction.transaction_id
 
@@ -211,7 +212,7 @@ class BtcService(object):
     def get_block_reward(self, block):
         return block.coinbase_tx.calculate_output_value()
 
-    def _add_coin_price_to_blocks(self, blocks, coin_price_type):
+    def _add_coin_price_to_blocks(self, blocks, coin_price_type=CoinPriceType.daily):
         from_currency_code = Chain.ticker_symbol(self.chain)
 
         if not from_currency_code or coin_price_type == CoinPriceType.empty:
@@ -225,7 +226,8 @@ class BtcService(object):
                 if hour_id in self.cached_prices:
                     continue
 
-                self.cached_prices[hour_id] = get_coin_price(from_currency_code=from_currency_code, timestamp=hour_ts, resource="histohour")
+                self.cached_prices[hour_id] = get_coin_price(from_currency_code=from_currency_code, timestamp=hour_ts,
+                                                             resource="histohour")
 
             for block in blocks:
                 block_hour_id = get_hour_id_from_ts(block.timestamp)
@@ -239,11 +241,12 @@ class BtcService(object):
                 if day_id in self.cached_prices:
                     continue
 
-                self.cached_prices[day_id] = get_coin_price(from_currency_code=from_currency_code, timestamp=day_ts, resource="histoday")
+                self.cached_prices[day_id] = get_coin_price(from_currency_code=from_currency_code, timestamp=day_ts,
+                                                            resource="histoday")
 
-            for block in blocks:
-                block_day_id = get_day_id_from_ts(block.timestamp)
-                block.coin_price_usd = self.cached_prices[block_day_id]
+        for block in blocks:
+            block_day_id = get_day_id_from_ts(block.timestamp)
+            block.coin_price_usd = self.cached_prices[block_day_id]
 
     def _add_coin_price_to_transaction(self, transaction, coin_price_usd):
         transaction.coin_price_usd = coin_price_usd
