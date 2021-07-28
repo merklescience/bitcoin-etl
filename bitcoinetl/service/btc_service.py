@@ -208,7 +208,7 @@ class BtcService(object):
     def get_block_reward(self, block):
         return block.coinbase_tx.calculate_output_value()
 
-    def _add_coin_price_to_blocks(self, blocks, coin_price_type=CoinPriceType.daily):
+    def _add_coin_price_to_blocks(self, blocks, coin_price_type):
         from_currency_code = Chain.ticker_symbol(self.chain)
         if not from_currency_code:
             return
