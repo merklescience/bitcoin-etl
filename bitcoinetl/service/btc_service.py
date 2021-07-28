@@ -29,12 +29,10 @@ from bitcoinetl.mappers.block_mapper import BtcBlockMapper
 from bitcoinetl.mappers.transaction_mapper import BtcTransactionMapper
 from bitcoinetl.service.btc_script_service import script_hex_to_non_standard_address
 from bitcoinetl.service.genesis_transactions import GENESIS_TRANSACTIONS
-from blockchainetl.cryptocompare import get_day_id_from_ts, get_hour_id_from_ts, get_ts_from_hour_id, \
-    get_ts_from_day_id, get_coin_price
 from blockchainetl.utils import rpc_response_batch_to_results, dynamic_batch_iterator
+import datetime as dt
 
-
-# from blockchainetl.biforst_pricing import get_coin_price
+from blockchainetl.biforst_pricing import get_coin_price
 
 
 class BtcService(object):
@@ -214,39 +212,24 @@ class BtcService(object):
 
     def _add_coin_price_to_blocks(self, blocks, coin_price_type=CoinPriceType.daily):
         from_currency_code = Chain.ticker_symbol(self.chain)
-
-        if not from_currency_code or coin_price_type == CoinPriceType.empty:
+        if not from_currency_code:
             return
 
-        elif coin_price_type == CoinPriceType.hourly:
-            block_hour_ids = list(set([get_hour_id_from_ts(block.timestamp) for block in blocks]))
-            block_hours_ts = {hour_id: get_ts_from_hour_id(hour_id) for hour_id in block_hour_ids}
-
-            for hour_id, hour_ts in block_hours_ts.items():
-                if hour_id in self.cached_prices:
-                    continue
-
-                self.cached_prices[hour_id] = get_coin_price(from_currency_code=from_currency_code, timestamp=hour_ts,
-                                                             resource="histohour")
-
-            for block in blocks:
-                block_hour_id = get_hour_id_from_ts(block.timestamp)
-                block.coin_price_usd = self.cached_prices[block_hour_id]
-
-        elif coin_price_type == CoinPriceType.daily:
-            block_day_ids = list(set([get_day_id_from_ts(block.timestamp) for block in blocks]))
-            block_days_ts = {day_id: get_ts_from_day_id(day_id) for day_id in block_day_ids}
-
-            for day_id, day_ts in block_days_ts.items():
-                if day_id in self.cached_prices:
-                    continue
-
-                self.cached_prices[day_id] = get_coin_price(from_currency_code=from_currency_code, timestamp=day_ts,
-                                                            resource="histoday")
+        # Only supporting daily since we have daily historical only from bifrost
+        block_dates_map = {block.timestamp: str(dt.datetime.fromtimestamp(block.timestamp).date()) for block in
+                           blocks}
+        block_dates = set(block_dates_map.values())
+        for block_date in block_dates:
+            if block_date in self.cached_prices:
+                continue
+            if coin_price_type == CoinPriceType.daily:
+                # This will make it return none for any other coinprice type
+                self.cached_prices[block_date] = get_coin_price(from_currency_code=from_currency_code,
+                                                                execution_date=block_date)
 
         for block in blocks:
-            block_day_id = get_day_id_from_ts(block.timestamp)
-            block.coin_price_usd = self.cached_prices[block_day_id]
+            block_date = block_dates_map.get(block.timestamp)
+            block.coin_price_usd = self.cached_prices.get(block_date)
 
     def _add_coin_price_to_transaction(self, transaction, coin_price_usd):
         transaction.coin_price_usd = coin_price_usd
