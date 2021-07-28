@@ -41,7 +41,7 @@ def _make_request(
 
 ) -> requests.Response:
     base_url = f"https://dev.bifrost.palantree.com/coin-price-service/historical-daily-price/"
-    retries = Retry(backoff_factor=5, total=10)
+    retries = Retry(backoff_factor=5, total=5)
     adapter = HTTPAdapter(max_retries=retries)
     session = requests.Session()
     session.mount('https://', adapter)

@@ -78,16 +78,14 @@ class BtcService(object):
         if self.chain in Chain.HAVE_OLD_API and with_transactions:
             self._fetch_transactions(blocks)
 
-        if not ((self.coin_price_type is None) or (self.coin_price_type == CoinPriceType.empty)):
-            self._add_coin_price_to_blocks(blocks, self.coin_price_type)
+        self._add_coin_price_to_blocks(blocks, self.coin_price_type)
 
         for block in blocks:
             self._remove_coinbase_input(block)
 
             if block.has_full_transactions():
                 for transaction in block.transactions:
-                    if not ((self.coin_price_type is None) or (self.coin_price_type == CoinPriceType.empty)):
-                        self._add_coin_price_to_transaction(transaction, block.coin_price_usd)
+                    self._add_coin_price_to_transaction(transaction, block.coin_price_usd)
                     self._add_non_standard_addresses(transaction)
                     if self.chain == Chain.ZCASH:
                         self._add_shielded_inputs_and_outputs(transaction)
