@@ -102,6 +102,6 @@ def get_coin_price(
 
     return round(price_data.get("price", 0), 8)
 
-
-if __name__ == '__main__':
-    print("finla ", get_coin_price('BTC', 1626912002))
+# Keeping it for future debugging, can remove if needed
+# if __name__ == '__main__':
+#     print("finla ", get_coin_price('BTC', 1626912002))
