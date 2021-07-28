@@ -48,8 +48,10 @@ logging_basic_config()
                    'If not provided transactions will not be exported. Use "-" for stdout')
 @click.option('-c', '--chain', default=Chain.BITCOIN, type=click.Choice(Chain.ALL),
               help='The type of chain')
-@click.option('--coin-price-type', default=CoinPriceType.empty, type=int,
-              help='Enable querying CryptoCompare for coin prices. 0 for no price, 1 for daily price, 2 for hourly price.')
+@click.option('--coin-price-type', default=CoinPriceType.daily, type=int,
+              help='Enable querying CryptoCompare for coin prices. 0 for no price, 1 for daily price, '
+                   '2 for hourly price.')
+# Making coin price type default as daily as this is mainly used for daily etl
 def export_blocks_and_transactions(start_block, end_block, batch_size, provider_uri,
                                    max_workers, blocks_output, transactions_output, chain,
                                    coin_price_type):

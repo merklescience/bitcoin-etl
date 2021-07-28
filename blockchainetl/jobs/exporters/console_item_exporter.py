@@ -33,6 +33,7 @@ class ConsoleItemExporter:
 
     def export_item(self, item):
         print(json.dumps(item, separators=(',', ':')))
+        print("\n")  ##Made debug look bit easier on console
 
     def close(self):
         pass
