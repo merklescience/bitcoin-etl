@@ -44,8 +44,8 @@ class BtcTransactionInputMapper(object):
 
         input.spending_transaction_id = spending_transaction_id
 
-        input.coinbase_param = ""
-        input.sequence = ""
+        input.coinbase_param = json_dict.get('coinbase')
+        input.sequence = json_dict.get('sequence')
 
         if 'scriptSig' in json_dict:
             input.script_asm = ""
