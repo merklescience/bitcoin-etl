@@ -38,7 +38,7 @@ class BtcTransactionOutputMapper(object):
 
         output.index = json_dict.get('n')
         output.addresses = json_dict.get('addresses')
-        output.witness = ''
+        output.witness = json_dict.get('txinwitness')
         output.value = bitcoin_to_satoshi(json_dict.get('value'))
         output.create_transaction_id = create_transaction_id
 
