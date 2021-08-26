@@ -46,10 +46,10 @@ class GooglePubSubItemExporter:
 
     def export_items(self, items):
         tot_steps = (len(items) // 1000) + 1
-        logging.info('Total publish loop steps', tot_steps)
+        logging.info('Total publish loop steps'+str(tot_steps))
         for i in range(0, len(items), 1000):
             mini_batch = items[i:i + 1000]
-            logging.info('Current Loop Iteration', i + 1, 'out of', tot_steps)
+            logging.info('Current Loop Iteration' + str(i + 1)+ 'out of'+str(tot_steps))
             try:
                 self._export_items_with_timeout(mini_batch)
             except timeout_decorator.TimeoutError as e:
