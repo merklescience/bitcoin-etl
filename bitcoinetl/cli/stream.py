@@ -53,9 +53,11 @@ logging_basic_config()
 @click.option('--retry_errors', default=True, type=bool, help='Enable Retry on streaming failures')
 @click.option('--coin-price-type', default=CoinPriceType.hourly, type=int,
               help='Enable querying CryptoCompare for coin prices. 0 for no price, 1 for daily price, 2 for hourly price.')
+@click.option('--kafka-topic-name', default="ltc-bd-txns-hot", type=str,
+              help='Name of topic if streaming out to Kafka')
 def stream(last_synced_block_file, lag, provider_uri, output, start_block, chain=Chain.BITCOIN,
            period_seconds=1, batch_size=1, block_batch_size=10, max_workers=5, log_file=None, pid_file=None,
-           enrich=True, retry_errors=True, coin_price_type=CoinPriceType.hourly):
+           enrich=True, retry_errors=True, coin_price_type=CoinPriceType.hourly, kafka_topic_name=None):
     """Streams all data types to console or Google Pub/Sub."""
     configure_logging(log_file)
     configure_signals()
@@ -66,7 +68,7 @@ def stream(last_synced_block_file, lag, provider_uri, output, start_block, chain
 
     streamer_adapter = BtcStreamerAdapter(
         bitcoin_rpc=ThreadLocalProxy(lambda: BitcoinRpc(provider_uri)),
-        item_exporter=get_item_exporter(output),
+        item_exporter=get_item_exporter(output,kafka_topic=kafka_topic_name),
         chain=chain,
         batch_size=batch_size,
         enable_enrich=enrich,
