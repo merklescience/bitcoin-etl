@@ -125,7 +125,7 @@ def stream(
     enrich=True,
     retry_errors=True,
     coin_price_type=CoinPriceType.hourly,
-    kafka_topic_name="dead-letter-topic"
+    kafka_topic_name="dead-letter-topic",
 ):
     """Streams all data types to console or Google Pub/Sub."""
     configure_logging(log_file)
