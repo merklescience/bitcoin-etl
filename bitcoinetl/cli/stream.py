@@ -32,30 +32,101 @@ from blockchainetl.thread_local_proxy import ThreadLocalProxy
 logging_basic_config()
 
 
-@click.command(context_settings=dict(help_option_names=['-h', '--help']))
-@click.option('-l', '--last-synced-block-file', default='last_synced_block.txt', type=str,
-              help='The file with the last synced block number.')
-@click.option('--lag', default=0, type=int, help='The number of blocks to lag behind the network.')
-@click.option('-p', '--provider-uri', default='http://user:pass@localhost:8332', type=str,
-              help='The URI of the remote Bitcoin node.')
-@click.option('-o', '--output', type=str,
-              help='Google PubSub topic path e.g. projects/your-project/topics/bitcoin_blockchain. '
-                   'If not specified will print to console.')
-@click.option('-s', '--start-block', default=None, type=int, help='Start block.')
-@click.option('-c', '--chain', default=Chain.BITCOIN, type=click.Choice(Chain.ALL), help='The type of chain.')
-@click.option('--period-seconds', default=1, type=int, help='How many seconds to sleep between syncs.')
-@click.option('-b', '--batch-size', default=1, type=int, help='How many blocks to batch in single request.')
-@click.option('-B', '--block-batch-size', default=10, type=int, help='How many blocks to batch in single sync round.')
-@click.option('-w', '--max-workers', default=5, type=int, help='The number of workers.')
-@click.option('--log-file', default=None, type=str, help='Log file.')
-@click.option('--pid-file', default=None, type=str, help='pid file.')
-@click.option('--enrich', default=True, type=bool, help='Enable filling in transactions inputs fields.')
-@click.option('--retry_errors', default=True, type=bool, help='Enable Retry on streaming failures')
-@click.option('--coin-price-type', default=CoinPriceType.hourly, type=int,
-              help='Enable querying CryptoCompare for coin prices. 0 for no price, 1 for daily price, 2 for hourly price.')
-def stream(last_synced_block_file, lag, provider_uri, output, start_block, chain=Chain.BITCOIN,
-           period_seconds=1, batch_size=1, block_batch_size=10, max_workers=5, log_file=None, pid_file=None,
-           enrich=True, retry_errors=True, coin_price_type=CoinPriceType.hourly):
+@click.command(context_settings=dict(help_option_names=["-h", "--help"]))
+@click.option(
+    "-l",
+    "--last-synced-block-file",
+    default="last_synced_block.txt",
+    type=str,
+    help="The file with the last synced block number.",
+)
+@click.option(
+    "--lag", default=0, type=int, help="The number of blocks to lag behind the network."
+)
+@click.option(
+    "-p",
+    "--provider-uri",
+    default="http://user:pass@localhost:8332",
+    type=str,
+    help="The URI of the remote Bitcoin node.",
+)
+@click.option(
+    "-o",
+    "--output",
+    type=str,
+    help="Google PubSub topic path e.g. projects/your-project/topics/bitcoin_blockchain. "
+    "If not specified will print to console.",
+)
+@click.option("-s", "--start-block", default=None, type=int, help="Start block.")
+@click.option(
+    "-c",
+    "--chain",
+    default=Chain.BITCOIN,
+    type=click.Choice(Chain.ALL),
+    help="The type of chain.",
+)
+@click.option(
+    "--period-seconds",
+    default=1,
+    type=int,
+    help="How many seconds to sleep between syncs.",
+)
+@click.option(
+    "-b",
+    "--batch-size",
+    default=1,
+    type=int,
+    help="How many blocks to batch in single request.",
+)
+@click.option(
+    "-B",
+    "--block-batch-size",
+    default=10,
+    type=int,
+    help="How many blocks to batch in single sync round.",
+)
+@click.option("-w", "--max-workers", default=5, type=int, help="The number of workers.")
+@click.option("--log-file", default=None, type=str, help="Log file.")
+@click.option("--pid-file", default=None, type=str, help="pid file.")
+@click.option(
+    "--enrich",
+    default=True,
+    type=bool,
+    help="Enable filling in transactions inputs fields.",
+)
+@click.option(
+    "--retry_errors", default=True, type=bool, help="Enable Retry on streaming failures"
+)
+@click.option(
+    "--coin-price-type",
+    default=CoinPriceType.hourly,
+    type=int,
+    help="Enable querying CryptoCompare for coin prices. 0 for no price, 1 for daily price, 2 for hourly price.",
+)
+@click.option(
+    "--kafka-topic-name",
+    default="dead-letter-topic",
+    type=str,
+    help="Name of topic if streaming out to Kafka",
+)
+def stream(
+    last_synced_block_file,
+    lag,
+    provider_uri,
+    output,
+    start_block,
+    chain=Chain.BITCOIN,
+    period_seconds=1,
+    batch_size=1,
+    block_batch_size=10,
+    max_workers=5,
+    log_file=None,
+    pid_file=None,
+    enrich=True,
+    retry_errors=True,
+    coin_price_type=CoinPriceType.hourly,
+    kafka_topic_name="dead-letter-topic"
+):
     """Streams all data types to console or Google Pub/Sub."""
     configure_logging(log_file)
     configure_signals()
@@ -66,7 +137,7 @@ def stream(last_synced_block_file, lag, provider_uri, output, start_block, chain
 
     streamer_adapter = BtcStreamerAdapter(
         bitcoin_rpc=ThreadLocalProxy(lambda: BitcoinRpc(provider_uri)),
-        item_exporter=get_item_exporter(output),
+        item_exporter=get_item_exporter(output, kafka_topic=kafka_topic_name),
         chain=chain,
         batch_size=batch_size,
         enable_enrich=enrich,
@@ -81,9 +152,6 @@ def stream(last_synced_block_file, lag, provider_uri, output, start_block, chain
         period_seconds=period_seconds,
         block_batch_size=block_batch_size,
         pid_file=pid_file,
-        retry_errors=retry_errors
+        retry_errors=retry_errors,
     )
     streamer.stream()
-
-
-
