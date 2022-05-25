@@ -29,7 +29,7 @@ import json
 
 
 class KafkaItemExporter:
-    def __init__(self, topic= "ltc-txns-hot-kstream-app" ) -> None:
+    def __init__(self, topic="dead-letter-topic") -> None:
         logging.basicConfig(
             level=logging.INFO,
             # filename="/data/mempool/mempool.log",
@@ -40,11 +40,13 @@ class KafkaItemExporter:
         conf = {
             "bootstrap.servers": "pkc-3w22w.us-central1.gcp.confluent.cloud:9092",
             "security.protocol": "SASL_SSL",
-            "sasl.mechanisms":"PLAIN",
-            "client.id": socket.gethostname(),
-            "message.max.bytes" : 5242880,
-            "sasl.username":"J7VXXU374KGW672N",
-            "sasl.password":"46RfgGhqkZcgnj9e0XplI3FsL98GZmSWvTOkmVmJPecrceOD72mkSiuFzxl4q4xA",
+            "sasl.mechanisms": "PLAIN",
+            # "client.id": socket.gethostname(),
+            "linger.ms":100,
+            "message.max.bytes": 5242880,
+            "batch.size" : 32 * 1024,
+            "sasl.username": "J7VXXU374KGW672N",
+            "sasl.password": "46RfgGhqkZcgnj9e0XplI3FsL98GZmSWvTOkmVmJPecrceOD72mkSiuFzxl4q4xA",
         }
         self.producer = Producer(conf)
         self.logging = logging.getLogger(__name__)
@@ -56,10 +58,9 @@ class KafkaItemExporter:
     def export_items(self, items):
         for item in items:
             self.export_item(item)
-            self.write_hot_txns(json.dumps(item, separators=(",", ":")))
 
     def export_item(self, item):
-        self.write_hot_txns(json.dumps(item, separators=(",", ":")))
+        self.write_txns(json.dumps(item, separators=(",", ":")), topic=self.topic)
 
     def close(self):
         pass
@@ -67,14 +68,22 @@ class KafkaItemExporter:
     def write_txns(self, enriched_data: str, topic: str):
         def acked(err, msg):
             if err is not None:
-                self.logging.error('%% Message failed delivery: %s\n' % err)
+                self.logging.error("%% Message failed delivery: %s\n" % err)
             else:
-                self.logging.info('%% Message delivered to %s [%d] @ %d\n' %
-                             (msg.topic(), msg.partition(), msg.offset()))
+                self.logging.info(
+                    "%% Message delivered to %s [%d] @ %d\n"
+                    % (msg.topic(), msg.partition(), msg.offset())
+                )
+
         try:
             self.producer.produce(topic, key="", value=enriched_data, callback=acked)
         except BufferError:
-            self.logging.error('%% Local producer queue is full (%d messages awaiting delivery): try again\n' %
-                             len(self.producer))
-        self.producer.poll(0)
+            self.logging.error(
+                "%% Local producer queue is full (%d messages awaiting delivery): try again\n"
+                % len(self.producer)
+            )
+        except Exception(e):
+            self.logging.error("error while pushing " + e)
+
+        self.producer.poll(1)
         # self.logging.info("published "+msgsPublished)
