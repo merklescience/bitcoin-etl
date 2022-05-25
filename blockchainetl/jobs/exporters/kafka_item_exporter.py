@@ -41,7 +41,6 @@ class KafkaItemExporter:
             "bootstrap.servers": "pkc-3w22w.us-central1.gcp.confluent.cloud:9092",
             "security.protocol": "SASL_SSL",
             "sasl.mechanisms": "PLAIN",
-            # "client.id": socket.gethostname(),
             "linger.ms":100,
             "message.max.bytes": 5242880,
             "batch.size" : 32 * 1024,

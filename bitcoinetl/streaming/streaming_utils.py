@@ -8,8 +8,8 @@ def get_item_exporter(output,kafka_topic: Optional[str] = None):
         from blockchainetl.jobs.exporters.google_pubsub_item_exporter import GooglePubSubItemExporter
         item_exporter = GooglePubSubItemExporter(
             item_type_to_topic_mapping={
-                'block': output + '.blocks',
-                'transaction': output + '.transactions'
+                "block": output + ".blocks",
+                "transaction": output + ".transactions",
             },
             message_attributes=('item_id',))
     elif output == "kafka":
