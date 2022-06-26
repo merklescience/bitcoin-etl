@@ -44,11 +44,17 @@ class BtcTransactionOutputMapper(object):
 
         if 'scriptPubKey' in json_dict:
             script_pub_key = json_dict.get('scriptPubKey')
-            output.script_asm = script_pub_key.get('asm')
-            output.script_hex = script_pub_key.get('hex')
+            output.script_asm = '' #script_pub_key.get('asm')
+            output.script_hex = '' #script_pub_key.get('hex')
             output.required_signatures = script_pub_key.get('reqSigs')
             output.type = script_pub_key.get('type')
-            output.addresses = script_pub_key.get('addresses')
+            #output.addresses = script_pub_key.get('addresses')
+            if script_pub_key.get('addresses') is not None and len(script_pub_key.get('addresses')) > 0:
+                output.addresses = script_pub_key.get('addresses')
+            elif script_pub_key.get('address') is None:
+                output.addresses = []
+            else:
+                output.addresses = [script_pub_key.get('address')]
 
         return output
 
@@ -60,8 +66,8 @@ class BtcTransactionOutputMapper(object):
                 'create_transaction_id': output.create_transaction_id,
                 'spending_transaction_id': None,
 
-                'script_asm': output.script_asm,
-                'script_hex': output.script_hex,
+                'script_asm': '', #output.script_asm
+                'script_hex': '', #output.script_hex
 
                 'type': output.type,
                 'addresses': output.addresses,
@@ -79,8 +85,8 @@ class BtcTransactionOutputMapper(object):
         for dict in dicts:
             input = BtcTransactionOutput()
             input.index = dict.get('index')
-            input.script_asm = dict.get('script_asm')
-            input.script_hex = dict.get('script_hex')
+            input.script_asm = '' #dict.get('script_asm')
+            input.script_hex = '' #dict.get('script_hex')
             input.required_signatures = dict.get('required_signatures')
             input.type = dict.get('type')
             input.addresses = dict.get('addresses')
