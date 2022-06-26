@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from confluent_kafka import Producer
+from timeout_decorator import timeout_decorator
 
 # from kafka import KafkaProducer
 import logging
@@ -29,60 +30,83 @@ import json
 
 
 class KafkaItemExporter:
-    def __init__(self, topic="dead-letter-topic") -> None:
+    def __init__(
+        self, item_type_to_topic_mapping, message_attributes=("item_id",)
+    ) -> None:
         logging.basicConfig(
             level=logging.INFO,
-            # filename="/data/mempool/mempool.log",
-            filename="msessage-publish.log",
+            filename="message-publish.log",
             format='{"time" : "%(asctime)s", "level" : "%(levelname)s" , "message" : "%(message)s"}',
         )
 
+        #Doppler this
+        pwd = "46RfgGhqkZcgnj9e0XplI3FsL98GZmSWvTOkmVmJPecrceOD72mkSiuFzxl4q4xA"
         conf = {
             "bootstrap.servers": "pkc-3w22w.us-central1.gcp.confluent.cloud:9092",
             "security.protocol": "SASL_SSL",
             "sasl.mechanisms": "PLAIN",
-            "linger.ms":100,
+            "client.id": socket.gethostname(),
             "message.max.bytes": 5242880,
-            "batch.size" : 32 * 1024,
             "sasl.username": "J7VXXU374KGW672N",
-            "sasl.password": "46RfgGhqkZcgnj9e0XplI3FsL98GZmSWvTOkmVmJPecrceOD72mkSiuFzxl4q4xA",
+            "sasl.password": pwd,
         }
-        self.producer = Producer(conf)
+
+        producer = Producer(conf)
+        self.item_type_to_topic_mapping = item_type_to_topic_mapping
+        self.producer = producer
         self.logging = logging.getLogger(__name__)
-        self.topic = topic
+        self.message_attributes = message_attributes
 
     def open(self):
         pass
 
     def export_items(self, items):
+        try:
+            self._export_items_with_timeout(items)
+        except timeout_decorator.TimeoutError as e:
+            logging.info("Recreating Pub/Sub publisher.")
+            raise e
+
+    @timeout_decorator.timeout(300)
+    def _export_items_with_timeout(self, items):
         for item in items:
             self.export_item(item)
 
     def export_item(self, item):
-        self.write_txns(json.dumps(item, separators=(",", ":")), topic=self.topic)
+        item_type = item.get("type")
+        # logging.info("publishing " + item_type)
+        has_item_type = item_type is not None
+        if has_item_type and item_type in self.item_type_to_topic_mapping:
+            data = json.dumps(item).encode("utf-8")
+            topic = self.item_type_to_topic_mapping[item_type]
+            message_future = self.write_txns(data.decode("utf-8"), topic=topic)
+            return message_future
+        else:
+            logging.error('Topic for item type "{item_type}" is not configured.')
+
+    def get_message_attributes(self, item):
+        attributes = {}
+
+        for attr_name in self.message_attributes:
+            if item.get(attr_name) is not None:
+                attributes[attr_name] = item.get(attr_name)
+
+        return attributes
 
     def close(self):
+        self.producer.flush()
         pass
 
     def write_txns(self, enriched_data: str, topic: str):
         def acked(err, msg):
             if err is not None:
-                self.logging.error("%% Message failed delivery: %s\n" % err)
+                self.logging.error('%% Message failed delivery: %s\n' % err)
             else:
-                self.logging.info(
-                    "%% Message delivered to %s [%d] @ %d\n"
-                    % (msg.topic(), msg.partition(), msg.offset())
-                )
-
+                self.logging.info('%% Message delivered to %s [%d] @ %d\n' %
+                             (msg.topic(), msg.partition(), msg.offset()))
         try:
             self.producer.produce(topic, key="", value=enriched_data, callback=acked)
         except BufferError:
-            self.logging.error(
-                "%% Local producer queue is full (%d messages awaiting delivery): try again\n"
-                % len(self.producer)
-            )
-        except Exception(e):
-            self.logging.error("error while pushing " + e)
-
-        self.producer.poll(1)
-        # self.logging.info("published "+msgsPublished)
+            self.logging.error('%% Local producer queue is full (%d messages awaiting delivery): try again\n' %
+                             len(self.producer))
+        self.producer.poll(0)
