@@ -98,12 +98,6 @@ logging_basic_config()
     "--retry_errors", default=True, type=bool, help="Enable Retry on streaming failures"
 )
 @click.option(
-    "--coin-price-type",
-    default=CoinPriceType.hourly,
-    type=int,
-    help="Enable querying CryptoCompare for coin prices. 0 for no price, 1 for daily price, 2 for hourly price.",
-)
-@click.option(
     "--kafka-topic-name",
     default="dead-letter-topic",
     type=str,
