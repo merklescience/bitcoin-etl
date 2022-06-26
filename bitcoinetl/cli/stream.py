@@ -22,7 +22,7 @@
 
 import click
 
-from bitcoinetl.enumeration.chain import Chain, CoinPriceType
+from bitcoinetl.enumeration.chain import Chain
 from bitcoinetl.rpc.bitcoin_rpc import BitcoinRpc
 
 from blockchainetl.logging_utils import logging_basic_config
@@ -124,7 +124,6 @@ def stream(
     pid_file=None,
     enrich=True,
     retry_errors=True,
-    coin_price_type=CoinPriceType.hourly,
     kafka_topic_name="dead-letter-topic",
 ):
     """Streams all data types to console or Google Pub/Sub."""
@@ -142,7 +141,6 @@ def stream(
         batch_size=batch_size,
         enable_enrich=enrich,
         max_workers=max_workers,
-        coin_price_type=coin_price_type,
     )
     streamer = Streamer(
         blockchain_streamer_adapter=streamer_adapter,
