@@ -33,7 +33,8 @@ setup(
     install_requires=[
         'requests==2.20.0',
         'python-dateutil==2.7.0',
-        'click==7.0'
+        'click==7.0',
+        'confluent-kafka==1.8.2'
     ],
     extras_require={
         'streaming': [
