@@ -50,13 +50,15 @@ logging_basic_config()
     type=str,
     help="The URI of the remote Bitcoin node.",
 )
-@click.option(
-    "-o",
-    "--output",
-    type=str,
-    help="Google PubSub topic path e.g. projects/your-project/topics/bitcoin_blockchain. "
-    "If not specified will print to console.",
-)
+@click.option('-o',
+              '--output',
+              type=str,
+              help='pubsub or kafka, if empty defaults to printing to console')
+@click.option('-t',
+              '--topic-prefix',
+              type=str,
+              help='Google PubSub topic path e.g. projects/your-project/topics/ethereum_blockchain. OR'
+                   'Kakfa topic prefix e.g. {chain}.{hot/warm}.{facet}')
 @click.option("-s", "--start-block", default=None, type=int, help="Start block.")
 @click.option(
     "-c",
@@ -104,21 +106,22 @@ logging_basic_config()
     help="Name of topic if streaming out to Kafka",
 )
 def stream(
-    last_synced_block_file,
-    lag,
-    provider_uri,
-    output,
-    start_block,
-    chain=Chain.BITCOIN,
-    period_seconds=1,
-    batch_size=1,
-    block_batch_size=10,
-    max_workers=5,
-    log_file=None,
-    pid_file=None,
-    enrich=True,
-    retry_errors=True,
-    kafka_topic_name="dead-letter-topic",
+        last_synced_block_file,
+        lag,
+        provider_uri,
+        output,
+        topic_prefix,
+        start_block,
+        chain=Chain.BITCOIN,
+        period_seconds=1,
+        batch_size=1,
+        block_batch_size=10,
+        max_workers=5,
+        log_file=None,
+        pid_file=None,
+        enrich=True,
+        retry_errors=True,
+        kafka_topic_name="dead-letter-topic",
 ):
     """Streams all data types to console or Google Pub/Sub."""
     configure_logging(log_file)
@@ -130,7 +133,9 @@ def stream(
 
     streamer_adapter = BtcStreamerAdapter(
         bitcoin_rpc=ThreadLocalProxy(lambda: BitcoinRpc(provider_uri)),
-        item_exporter=get_item_exporter(output, kafka_topic=kafka_topic_name),
+        item_exporter=get_item_exporter(output=output,
+                                        topic=topic_prefix
+                                        ),
         chain=chain,
         batch_size=batch_size,
         enable_enrich=enrich,

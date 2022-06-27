@@ -46,6 +46,7 @@ class KafkaItemExporter:
             "security.protocol": "SASL_SSL",
             "sasl.mechanisms": "PLAIN",
             "client.id": socket.gethostname(),
+            "linger.ms": 100,
             "message.max.bytes": 5242880,
             "sasl.username": "J7VXXU374KGW672N",
             "sasl.password": pwd,
@@ -74,7 +75,7 @@ class KafkaItemExporter:
 
     def export_item(self, item):
         item_type = item.get("type")
-        # logging.info("publishing " + item_type)
+        logging.info("publishing " + item_type)
         has_item_type = item_type is not None
         if has_item_type and item_type in self.item_type_to_topic_mapping:
             data = json.dumps(item).encode("utf-8")
