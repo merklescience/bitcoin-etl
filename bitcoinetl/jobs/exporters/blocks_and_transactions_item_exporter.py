@@ -66,6 +66,7 @@ TRANSACTION_FIELDS_TO_EXPORT = [
     'output_count',
     'input_value',
     'output_value',
+    'fee',
     'inputs',
     'outputs',
 ]
