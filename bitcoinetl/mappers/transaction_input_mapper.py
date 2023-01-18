@@ -74,8 +74,8 @@ class BtcTransactionInputMapper(object):
         for dict in dicts:
             input = BtcTransactionInput()
             input.index = dict.get('index')
-            input.spent_transaction_hash = dict.get('create_transaction_id')
-            input.spent_output_index = dict.get('create_output_index')
+            input.spent_transaction_hash = dict.get('spent_transaction_hash')
+            input.spent_output_index = dict.get('spent_output_index')
             input.script_asm = '' #dict.get('script_asm')
             input.script_hex = '' #dict.get('script_hex')
             input.sequence = dict.get('sequence')

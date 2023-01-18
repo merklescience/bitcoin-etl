@@ -50,7 +50,6 @@ BLOCK_FIELDS_TO_EXPORT = [
 
 
 TRANSACTION_FIELDS_TO_EXPORT = [
-    'transaction_id',
     'hash',
     'block_number',
     'block_hash',
@@ -59,7 +58,6 @@ TRANSACTION_FIELDS_TO_EXPORT = [
     'lock_time',
     'size',
     'virtual_size',
-    'weight',
     'version',
     'index',
     'input_count',

@@ -29,7 +29,6 @@ class BtcBlock(object):
         self.hash = None
         self.size = None
         self.stripped_size = None
-        self.weight = None
         self.number = None
         self.version = None
         self.merkle_root = None

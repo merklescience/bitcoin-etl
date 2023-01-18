@@ -159,7 +159,7 @@ class BtcService(object):
                     block.coinbase_param = coinbase_input.coinbase_param
                     block.coinbase_param_decoded = bytes.fromhex(coinbase_input.coinbase_param).decode('utf-8', 'replace')
                     block.coinbase_tx = transaction
-                    block.coinbase_txid = transaction.transaction_id
+                    block.coinbase_txid = transaction.hash
 
                     block.block_reward = self.get_block_reward(block)
                     transaction.input_count = 0

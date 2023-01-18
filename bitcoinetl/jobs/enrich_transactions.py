@@ -80,7 +80,7 @@ class EnrichTransactionsJob(BaseJob):
         transaction_hashes = set(transaction_hashes)
         if len(transaction_hashes) > 0:
             transactions = self.btc_service.get_transactions_by_hashes(transaction_hashes)
-            return {transaction.transaction_id: transaction for transaction in transactions}
+            return {transaction.hash: transaction for transaction in transactions}
         else:
             return {}
 

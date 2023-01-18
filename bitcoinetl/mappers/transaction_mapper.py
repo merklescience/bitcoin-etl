@@ -38,12 +38,11 @@ class BtcTransactionMapper(object):
 
     def json_dict_to_transaction(self, json_dict, block=None, index=None):
         transaction = BtcTransaction()
-        transaction.hash = json_dict.get('hash')
+        transaction.hash = json_dict.get('txid')
         transaction.size = json_dict.get('size')
         transaction.virtual_size = json_dict.get('vsize')
         transaction.version = json_dict.get('version')
         transaction.lock_time = json_dict.get('locktime')
-        transaction.transaction_id = json_dict.get('txid')
 
         if block is not None:
             transaction.block_number = block.number
@@ -70,7 +69,6 @@ class BtcTransactionMapper(object):
         transaction.join_splits = self.join_split_mapper.vjoinsplit_to_join_splits(json_dict.get('vjoinsplit'))
         transaction.value_balance = bitcoin_to_satoshi(json_dict.get('valueBalance'))
 
-        transaction.weight = json_dict.get('weight')
         transaction.output_addresses = self.get_output_addresses(transaction)
         return transaction
 
@@ -81,7 +79,6 @@ class BtcTransactionMapper(object):
         result = {
             'type': 'transaction',
             'hash': transaction.hash,
-            'transaction_id': transaction.transaction_id,
             'size': transaction.size,
             'virtual_size': transaction.virtual_size,
             'version': transaction.version,
@@ -90,7 +87,6 @@ class BtcTransactionMapper(object):
             'block_hash': transaction.block_hash,
             'block_timestamp': transaction.block_timestamp,
             'is_coinbase': transaction.is_coinbase,
-            'index': transaction.index,
 
             'inputs': self.transaction_input_mapper.inputs_to_dicts(transaction.inputs),
             'outputs': self.transaction_output_mapper.outputs_to_dicts(transaction.outputs),
@@ -100,7 +96,6 @@ class BtcTransactionMapper(object):
             'input_value': transaction.calculate_input_value(),
             'output_value': transaction.calculate_output_value(),
             'fee': transaction.calculate_fee(),
-            'weight': transaction.weight,
             'output_addresses': transaction.output_addresses
         }
         return result
@@ -108,7 +103,6 @@ class BtcTransactionMapper(object):
     def dict_to_transaction(self, dict):
         transaction = BtcTransaction()
         transaction.hash = dict.get('hash')
-        transaction.transaction_id = dict.get('transaction_id')
         transaction.size = dict.get('size')
         transaction.virtual_size = dict.get('virtual_size')
         transaction.version = dict.get('version')
@@ -117,8 +111,6 @@ class BtcTransactionMapper(object):
         transaction.block_hash = dict.get('block_hash')
         transaction.block_timestamp = dict.get('block_timestamp')
         transaction.is_coinbase = dict.get('is_coinbase')
-        transaction.index = dict.get('index')
-        transaction.weight = dict.get('weight')
         transaction.output_addresses = dict.get('output_addresses')
         transaction.input_addresses = dict.get('input_addresses')
         transaction.input_count = dict.get('input_count')
