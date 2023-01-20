@@ -44,6 +44,7 @@ class BtcTransaction(object):
         self.value_balance = 0
 
         # New fields
+        self.weight = None
         self.input_count = None
         self.input_value = None
         self.output_count = None
