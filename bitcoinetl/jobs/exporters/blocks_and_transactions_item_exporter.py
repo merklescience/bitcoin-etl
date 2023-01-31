@@ -58,6 +58,7 @@ TRANSACTION_FIELDS_TO_EXPORT = [
     'lock_time',
     'size',
     'virtual_size',
+    'weight',
     'version',
     'index',
     'input_count',

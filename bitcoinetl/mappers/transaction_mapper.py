@@ -70,6 +70,7 @@ class BtcTransactionMapper(object):
         transaction.value_balance = bitcoin_to_satoshi(json_dict.get('valueBalance'))
 
         # New fields
+        transaction.weight = json_dict.get('weight')
         transaction.output_addresses = self.get_output_addresses(transaction)
         return transaction
 
