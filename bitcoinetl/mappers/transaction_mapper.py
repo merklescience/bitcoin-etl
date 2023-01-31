@@ -98,6 +98,7 @@ class BtcTransactionMapper(object):
             'input_value': transaction.calculate_input_value(),
             'output_value': transaction.calculate_output_value(),
             'fee': transaction.calculate_fee(),
+            'weight': transaction.weight,
             'output_addresses': transaction.output_addresses
         }
         return result
@@ -113,6 +114,7 @@ class BtcTransactionMapper(object):
         transaction.block_hash = dict.get('block_hash')
         transaction.block_timestamp = dict.get('block_timestamp')
         transaction.is_coinbase = dict.get('is_coinbase')
+        transaction.weight = dict.get('weight')
         transaction.output_addresses = dict.get('output_addresses')
         transaction.input_addresses = dict.get('input_addresses')
         transaction.input_count = dict.get('input_count')
