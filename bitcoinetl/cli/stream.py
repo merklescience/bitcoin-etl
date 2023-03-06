@@ -38,9 +38,8 @@ logging_basic_config()
 @click.option('--lag', default=0, type=int, help='The number of blocks to lag behind the network.')
 @click.option('-p', '--provider-uri', default='http://user:pass@localhost:8332', type=str,
               help='The URI of the remote Bitcoin node.')
-@click.option('-o', '--output', type=str,
-              help='Google PubSub topic path e.g. projects/your-project/topics/bitcoin_blockchain. '
-                   'If not specified will print to console.')
+@click.option('-o', '--output', type=str, help='pubsub or kafka, if empty defaults to printing to console')
+@click.option('-t', '--topic-prefix', type=str, help='Google PubSub topic path e.g. projects/your-project/topics/ethereum_blockchain. OR Kakfa topic prefix e.g. {chain}.{hot/warm}.{facet}')
 @click.option('-s', '--start-block', default=None, type=int, help='Start block.')
 @click.option('-c', '--chain', default=Chain.BITCOIN, type=click.Choice(Chain.ALL), help='The type of chain.')
 @click.option('--period-seconds', default=1, type=int, help='How many seconds to sleep between syncs.')
@@ -51,7 +50,7 @@ logging_basic_config()
 @click.option('--pid-file', default=None, type=str, help='pid file.')
 @click.option('--enrich', default=True, type=bool, help='Enable filling in transactions inputs fields.')
 @click.option('--retry_errors', default=True, type=bool, help='Enable Retry on streaming failures')
-def stream(last_synced_block_file, lag, provider_uri, output, start_block, chain=Chain.BITCOIN,
+def stream(last_synced_block_file, lag, provider_uri, output, topic_prefix, start_block, chain=Chain.BITCOIN,
            period_seconds=1, batch_size=1, block_batch_size=10, max_workers=5, log_file=None, pid_file=None,
            enrich=True, retry_errors=True):
     """Streams all data types to console or Google Pub/Sub."""
@@ -64,7 +63,7 @@ def stream(last_synced_block_file, lag, provider_uri, output, start_block, chain
 
     streamer_adapter = BtcStreamerAdapter(
         bitcoin_rpc=ThreadLocalProxy(lambda: BitcoinRpc(provider_uri)),
-        item_exporter=get_item_exporter(output),
+        item_exporter=get_item_exporter(output, topic_prefix),
         chain=chain,
         batch_size=batch_size,
         enable_enrich=enrich,
