@@ -33,7 +33,12 @@ setup(
     install_requires=[
         'requests~=2.20',
         'python-dateutil~=2.7',
-        'click~=7.0'
+        'click==7.0',
+        'confluent-kafka==1.8.2',
+        'timeout-decorator==0.4.1',
+        'google-cloud-pubsub==0.39.1',
+        'google-api-core==1.31.5',
+        'google-auth==1.35.0'
     ],
     extras_require={
         'streaming': [

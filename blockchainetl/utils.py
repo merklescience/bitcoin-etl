@@ -92,3 +92,18 @@ def pairwise(iterable):
     a, b = itertools.tee(iterable)
     next(b, None)
     return zip(a, b)
+
+
+def flattend_out_input_output_address(transaction_data):
+    """
+    this function loops through input and outputs addresses and does catesian product of it
+    """
+    flattened_addresses = []
+    block_timestamp = transaction_data.get("block_timestamp")
+
+    if transaction_data.get("inputs") and transaction_data.get("outputs"):
+        for _output in transaction_data.get("outputs"):
+            for _input in transaction_data.get("inputs"):
+                _output.get("addresses") and _input.get("addresses") and flattened_addresses.append({"input_address": _input["addresses"][0], "output_address": _output["addresses"][0], "block_timestamp": block_timestamp})
+
+    transaction_data["flattened_addresses"] = flattened_addresses

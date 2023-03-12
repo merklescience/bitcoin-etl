@@ -50,9 +50,10 @@ logging_basic_config()
 @click.option('--pid-file', default=None, type=str, help='pid file.')
 @click.option('--enrich', default=True, type=bool, help='Enable filling in transactions inputs fields.')
 @click.option('--retry_errors', default=True, type=bool, help='Enable Retry on streaming failures')
+@click.option('--flatten_data', default=False, type=bool, help='Flatten transaction data')
 def stream(last_synced_block_file, lag, provider_uri, output, topic_prefix, start_block, chain=Chain.BITCOIN,
            period_seconds=1, batch_size=1, block_batch_size=10, max_workers=5, log_file=None, pid_file=None,
-           enrich=True, retry_errors=True):
+           enrich=True, retry_errors=True, flatten_data=False):
     """Streams all data types to console or Google Pub/Sub."""
     configure_logging(log_file)
     configure_signals()
@@ -63,7 +64,7 @@ def stream(last_synced_block_file, lag, provider_uri, output, topic_prefix, star
 
     streamer_adapter = BtcStreamerAdapter(
         bitcoin_rpc=ThreadLocalProxy(lambda: BitcoinRpc(provider_uri)),
-        item_exporter=get_item_exporter(output, topic_prefix),
+        item_exporter=get_item_exporter(output, topic_prefix, flatten_data),
         chain=chain,
         batch_size=batch_size,
         enable_enrich=enrich,
