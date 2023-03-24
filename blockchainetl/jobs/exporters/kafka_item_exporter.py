@@ -27,6 +27,8 @@ import logging
 import socket
 import json
 
+from blockchainetl.utils import flattend_out_input_output_address
+
 
 class KafkaItemExporter:
     def __init__(
@@ -78,6 +80,7 @@ class KafkaItemExporter:
         logging.info("publishing " + item_type)
         has_item_type = item_type is not None
         if has_item_type and item_type in self.item_type_to_topic_mapping:
+            self.flatten_data and flattend_out_input_output_address(item)
             data = json.dumps(item).encode("utf-8")
             topic = self.item_type_to_topic_mapping[item_type]
             message_future = self.write_txns(data.decode("utf-8"), topic=topic)
