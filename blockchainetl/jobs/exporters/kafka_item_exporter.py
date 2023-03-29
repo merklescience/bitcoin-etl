@@ -27,7 +27,8 @@ import logging
 import socket
 import json
 
-from blockchainetl.utils import flattend_out_input_output_address
+from blockchainetl.constants import TG_LINK_INPUTS, TG_LINK_OUTPUTS, TG_LINK_FLAT, TG_TRANSACTION, TOPIC_TRANSACTION
+from blockchainetl.dataflow_utils import transform_transaction_data
 
 
 class KafkaItemExporter:
@@ -75,12 +76,26 @@ class KafkaItemExporter:
         for item in items:
             self.export_item(item)
 
+    def push_transaction_data_to_kafka(self, data, data_type):
+        logging.info("Started Pushing: " + data_type)
+        data_topic = self.item_type_to_topic_mapping[data_type]
+        for item in data:
+            item = json.dumps(item).encode("utf-8")
+            _ = self.write_txns(item.decode("utf-8"), topic=data_topic)
+
     def export_item(self, item):
         item_type = item.get("type")
         logging.info("publishing " + item_type)
         has_item_type = item_type is not None
         if has_item_type and item_type in self.item_type_to_topic_mapping:
-            self.flatten_data and flattend_out_input_output_address(item)
+
+            if item_type == TOPIC_TRANSACTION:
+                link_inputs, link_outputs, link_flat, transaction_data = transform_transaction_data(item, self.flatten_data)
+                self.push_transaction_data_to_kafka(link_inputs, TG_LINK_INPUTS)
+                self.push_transaction_data_to_kafka(link_outputs, TG_LINK_OUTPUTS)
+                self.push_transaction_data_to_kafka(link_flat, TG_LINK_FLAT)
+                self.push_transaction_data_to_kafka(transaction_data, TG_TRANSACTION)
+
             data = json.dumps(item).encode("utf-8")
             topic = self.item_type_to_topic_mapping[item_type]
             message_future = self.write_txns(data.decode("utf-8"), topic=topic)
@@ -109,7 +124,6 @@ class KafkaItemExporter:
                 self.logging.info('%% Message delivered to %s [%d] @ %d\n' %
                              (msg.topic(), msg.partition(), msg.offset()))
         try:
-            breakpoint()
             self.producer.produce(topic, key="", value=enriched_data, callback=acked)
         except BufferError:
             self.logging.error('%% Local producer queue is full (%d messages awaiting delivery): try again\n' % len(self.producer))

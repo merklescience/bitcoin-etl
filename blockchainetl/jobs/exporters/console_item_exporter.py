@@ -22,7 +22,7 @@
 
 import json
 
-from blockchainetl.utils import flattend_out_input_output_address
+from blockchainetl.dataflow_utils import flatten_input_output_addresses_data
 
 
 class ConsoleItemExporter:
@@ -37,7 +37,7 @@ class ConsoleItemExporter:
             self.export_item(item)
 
     def export_item(self, item):
-        self.flatten_data and flattend_out_input_output_address(item)
+        self.flatten_data and flatten_input_output_addresses_data(item, add_flattened_data=self.flatten_data)
         print(json.dumps(item, separators=(',', ':')))
 
     def close(self):

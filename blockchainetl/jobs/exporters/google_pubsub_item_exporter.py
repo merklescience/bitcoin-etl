@@ -26,7 +26,7 @@ import logging
 from google.cloud import pubsub_v1
 from timeout_decorator import timeout_decorator
 
-from blockchainetl.utils import flattend_out_input_output_address
+from blockchainetl.dataflow_utils import flatten_input_output_addresses_data
 
 
 class GooglePubSubItemExporter:
@@ -78,7 +78,7 @@ class GooglePubSubItemExporter:
     def export_item(self, item):
         item_type = item.get('type')
         if item_type is not None and item_type in self.item_type_to_topic_mapping:
-            self.flatten_data and flattend_out_input_output_address(item)
+            self.flatten_data and flatten_input_output_addresses_data(item, add_flattened_data=self.flatten_data)
             topic_path = self.item_type_to_topic_mapping.get(item_type)
             data = json.dumps(item).encode('utf-8')
             message_future = self.publisher.publish(topic_path, data=data, **self.get_message_attributes(item))

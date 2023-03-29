@@ -1,3 +1,4 @@
+from blockchainetl.constants import TOPIC_NAMES_POSTFIX_MAP
 from blockchainetl.jobs.exporters.console_item_exporter import ConsoleItemExporter
 
 
@@ -6,8 +7,7 @@ def get_item_exporter(output, topic_prefix, flatten_data):
 
     if topic_prefix:
         item_type_to_topic_mapping.update({
-            "block": topic_prefix + ".blocks",
-            "transaction": topic_prefix + ".transactions"
+            topic_name: topic_prefix + topic_value for topic_name, topic_value in TOPIC_NAMES_POSTFIX_MAP.items()
         })
 
     if output == "gcp":
