@@ -27,8 +27,10 @@ import logging
 import socket
 import json
 
-from blockchainetl.constants import TG_LINK_INPUTS, TG_LINK_OUTPUTS, TG_LINK_FLAT, TG_TRANSACTION, TOPIC_TRANSACTION
+from blockchainetl.constants import TG_LINK_INPUTS, TG_LINK_OUTPUTS, TG_LINK_FLAT, TG_TRANSACTION, TOPIC_TRANSACTION, \
+    CH_TRANSACTION, CH_BLOCK, TOPIC_BLOCK
 from blockchainetl.dataflow_utils import transform_transaction_data
+from blockchainetl.jobs.exporters.converters.convert_to_clickhouse_format import ClickhouseConvertor
 
 
 class KafkaItemExporter:
@@ -60,6 +62,7 @@ class KafkaItemExporter:
         self.logging = logging.getLogger(__name__)
         self.message_attributes = message_attributes
         self.flatten_data = flatten_data
+        # self.push_coin_data()
 
     def open(self):
         pass
@@ -83,12 +86,30 @@ class KafkaItemExporter:
             item = json.dumps(item).encode("utf-8")
             _ = self.write_txns(item.decode("utf-8"), topic=data_topic)
 
+    def push_clickhouse_data_to_kafka(self, data, ch_topic):
+        data = json.dumps(data).encode("utf-8")
+        _ = self.write_txns(data.decode("utf-8"), topic=ch_topic)
+
+    def convert_and_push_data_in_clickhouse_format(self, data, data_type):
+        ch_data_type = CH_TRANSACTION if data_type == TOPIC_TRANSACTION else CH_BLOCK
+        ch_data_topic = self.item_type_to_topic_mapping[ch_data_type]
+
+        if data_type == TOPIC_TRANSACTION:
+            converted_ch_data = ClickhouseConvertor.convert_transactions(data)
+            self.push_clickhouse_data_to_kafka(converted_ch_data, ch_data_topic)
+        elif data_type == TOPIC_BLOCK:
+            converted_ch_data = ClickhouseConvertor.convert_blocks(data)
+            self.push_clickhouse_data_to_kafka(converted_ch_data, ch_data_topic)
+        else:
+            logging.error(f'Topic for item type "{data_type}" is not configured.')
+
     def export_item(self, item):
         item_type = item.get("type")
         logging.info("publishing " + item_type)
         has_item_type = item_type is not None
         if has_item_type and item_type in self.item_type_to_topic_mapping:
 
+            # pushing data for TG to consume
             if item_type == TOPIC_TRANSACTION:
                 link_inputs, link_outputs, link_flat, transaction_data = transform_transaction_data(item, self.flatten_data)
                 self.push_transaction_data_to_kafka(link_inputs, TG_LINK_INPUTS)
@@ -96,12 +117,15 @@ class KafkaItemExporter:
                 self.push_transaction_data_to_kafka(link_flat, TG_LINK_FLAT)
                 self.push_transaction_data_to_kafka(transaction_data, TG_TRANSACTION)
 
+            # pushing data for CH to consume
+            self.convert_and_push_data_in_clickhouse_format(item, item_type)
+
             data = json.dumps(item).encode("utf-8")
             topic = self.item_type_to_topic_mapping[item_type]
             message_future = self.write_txns(data.decode("utf-8"), topic=topic)
             return message_future
         else:
-            logging.error('Topic for item type "{item_type}" is not configured.')
+            logging.error(f'Topic for item type "{item_type}" is not configured.')
 
     def get_message_attributes(self, item):
         attributes = {}
@@ -128,3 +152,16 @@ class KafkaItemExporter:
         except BufferError:
             self.logging.error('%% Local producer queue is full (%d messages awaiting delivery): try again\n' % len(self.producer))
         return self.producer.poll(0)
+
+    def push_coin_data(self):
+        import requests
+        coins = ["MUST", "XI", "NORD", "POLS"]
+        url = 'https://api.mint.palantree.com/api/coins/prices?coin_symbols='
+        for coin in coins:
+            data = requests.get(f"{url}{coin}", headers={"X-Api-Key": "aEysW0Up.Gu4hkBGeRqxioa8cSK7CQbS6Z1praqEz"}).json()
+            if data:
+                data = data[0]
+            data = json.dumps(data).encode("utf-8")
+            message_future = self.write_txns(data.decode("utf-8"), topic="dev.mint.prices")
+
+        breakpoint()

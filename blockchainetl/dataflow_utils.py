@@ -62,7 +62,7 @@ def flatten_input_output_addresses_data(transaction, add_flattened_data=False):
     block_timestamp = transaction.get("block_timestamp")
 
     if not (transaction.get("outputs") and transaction.get("inputs")):
-        return
+        return link_flat
 
     for each_output in transaction.get("outputs"):
         for each_input in transaction.get("inputs"):
@@ -74,7 +74,6 @@ def flatten_input_output_addresses_data(transaction, add_flattened_data=False):
 
     add_flattened_data and transaction.update({"flattened_data": link_flat})
     return link_flat
-
 
 
 def get_transaction_data(transaction):
